@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Phone Auth Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .container { max-width: 500px; margin: auto; padding: 2em; border: 1px solid #ccc; border-radius: 8px; }
+        input { width: 100%; padding: 8px; margin-bottom: 1em; box-sizing: border-box; }
+        button { padding: 10px 15px; border: none; background-color: #007bff; color: white; border-radius: 4px; cursor: pointer; }
+        button:disabled { background-color: #ccc; }
+        #log { margin-top: 1em; padding: 1em; background-color: #f4f4f4; border: 1px solid #ddd; white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Firebase Phone Number Authentication Test</h2>
+
+        <div id="recaptcha-container"></div>
+        <br>
+
+        <label for="phone-number">Enter Phone Number (must be in E.164 format):</label>
+        <input type="text" id="phone-number" placeholder="+16505551234">
+        <button id="send-otp-btn">Send OTP</button>
+
+        <hr style="margin: 2em 0;">
+
+        <label for="otp-code">Enter OTP:</label>
+        <input type="text" id="otp-code">
+        <button id="verify-otp-btn">Verify OTP & Get Token</button>
+
+        <h3>Result:</h3>
+        <pre id="log">ID Token will appear here...</pre>
+    </div>
+
+    <!-- Firebase SDK - Updated to v9.22.1 for latest features and bug fixes -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+    <script>
+        // This configuration is an exact match of your firebase_web.js file.
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZtVeJXSGL4UD2r-Mhm7RQwv6P0uPK27E",
+            authDomain: "encoded-joy-472514-n7.firebaseapp.com",
+            projectId: "encoded-joy-472514-n7",
+            storageBucket: "encoded-joy-472514-n7.firebasestorage.app",
+            messagingSenderId: "779116345230",
+            appId: "1:779116345230:web:cb4d46f15a91220d6416df",
+            measurementId: "G-SMGRZC5HHC"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // UI Elements
+        const phoneNumberInput = document.getElementById('phone-number');
+        const sendOtpBtn = document.getElementById('send-otp-btn');
+        const otpCodeInput = document.getElementById('otp-code');
+        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const logElement = document.getElementById('log');
+
+        // Setup reCAPTCHA
+        logElement.textContent = 'Initializing reCAPTCHA...';
+        console.log('Initializing reCAPTCHA...');
+
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            'size': 'normal', // Changed from 'invisible' to 'normal' for easier debugging
+            'callback': (response) => {
+                logElement.textContent = 'reCAPTCHA solved!';
+                console.log("reCAPTCHA solved, ready to send OTP.");
+            },
+            'expired-callback': () => {
+                logElement.textContent = 'reCAPTCHA expired. Please solve it again.';
+                console.log("reCAPTCHA expired.");
+            }
+        });
+
+        // Render the reCAPTCHA widget
+        recaptchaVerifier.render().then((widgetId) => {
+            window.recaptchaWidgetId = widgetId;
+            logElement.textContent = 'reCAPTCHA is ready. Please enter your phone number.';
+            console.log('reCAPTCHA rendered successfully.');
+        });
+
+
+        // Send OTP
+        sendOtpBtn.addEventListener('click', () => {
+            const phoneNumber = phoneNumberInput.value;
+            const appVerifier = window.recaptchaVerifier;
+
+            if (!phoneNumber) {
+                alert('Please enter a phone number.');
+                return;
+            }
+
+            // Simple validation for E.164 format
+            if (!phoneNumber.startsWith('+')) {
+                alert('Invalid format. Please make sure the phone number starts with a country code (e.g., +1, +91).');
+                return;
+            }
+
+            logElement.textContent = 'Sending OTP...';
+            console.log(`Attempting to send OTP to ${phoneNumber}`);
+
+            auth.signInWithPhoneNumber(phoneNumber, appVerifier)
+                .then((confirmationResult) => {
+                    logElement.textContent = 'OTP sent! Please check your phone and enter the code.';
+                    console.log('Confirmation result received from Firebase.', confirmationResult);
+                    window.confirmationResult = confirmationResult;
+                }).catch((error) => {
+                    logElement.textContent = `Error sending OTP. Check the browser console for details. Error code: ${error.code}`;
+                    console.error("Full error object from Firebase:", error);
+                    // Reset reCAPTCHA
+                    grecaptcha.reset(window.recaptchaWidgetId);
+                });
+        });
+
+        // Verify OTP and get Token
+        verifyOtpBtn.addEventListener('click', () => {
+            const code = otpCodeInput.value;
+            if (!code) {
+                alert('Please enter the OTP.');
+                return;
+            }
+
+            logElement.textContent = 'Verifying OTP...';
+            console.log(`Attempting to verify OTP code: ${code}`);
+
+            window.confirmationResult.confirm(code).then((result) => {
+                const user = result.user;
+                logElement.textContent = 'OTP Verified! Getting ID Token...';
+                console.log('OTP verification successful. User object:', result.user);
+
+                // Get the ID token
+                user.getIdToken().then((idToken) => {
+                    logElement.textContent = `SUCCESS! \n\nFirebase ID Token:\n\n${idToken}`;
+                    console.log('Successfully retrieved Firebase ID Token.');
+                });
+
+            }).catch((error) => {
+                logElement.textContent = `Error verifying OTP. Check the browser console for details. Error code: ${error.code}`;
+                console.error("Full error object during OTP verification:", error);
+            });
+        });
+
+    </script>
+</body>
+</html>

@@ -107,7 +107,6 @@ quotationSchema.pre('save', function(next) {
 });
 
 // Index for faster searches
-quotationSchema.index({ quotationNumber: 1 });
 quotationSchema.index({ customerEmail: 1 });
 quotationSchema.index({ status: 1 });
 quotationSchema.index({ createdAt: -1 });

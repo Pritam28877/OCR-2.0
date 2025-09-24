@@ -18,7 +18,17 @@ const quotationRoutes = require('./routes/quotations');
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "https://www.gstatic.com", "https://www.google.com", "'unsafe-inline'"],
+      "frame-src": ["'self'", "https://www.google.com"],
+      "connect-src": ["'self'", "https://www.gstatic.com", "https://identitytoolkit.googleapis.com", "https://www.google.com"],
+    },
+  })
+);
+
 
 // CORS configuration
 app.use(cors({
@@ -41,6 +51,10 @@ app.use(limiter);
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static files from the 'public' directory or root
+app.use(express.static('public'));
+app.use(express.static(__dirname)); // Serves files from the project root
 
 // Swagger configuration
 const swaggerOptions = {

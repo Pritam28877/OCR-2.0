@@ -74,7 +74,6 @@ productSchema.pre('save', function(next) {
 
 // Index for faster searches
 productSchema.index({ productName: 1 });
-productSchema.index({ itemNumber: 1 });
 productSchema.index({ category: 1 });
 
 module.exports = mongoose.model('Product', productSchema);

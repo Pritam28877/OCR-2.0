@@ -194,10 +194,86 @@ const refreshToken = async (req, res) => {
   }
 };
 
+const sendOtp = async (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({
+      success: false,
+      message: 'Phone number is required'
+    });
+  }
+  // This is a placeholder function.
+  // The OTP sending logic must be implemented on the client-side using the Firebase Authentication SDK.
+  // The client-side code will handle the reCAPTCHA verification and send the OTP to the user's phone number.
+  // After the user verifies the OTP on the client, the client will receive a Firebase ID token.
+  // That token should be sent to the /api/auth/verify-otp endpoint.
+  res.status(200).json({
+    success: true,
+    message: 'OTP sending process should be initiated on the client-side.'
+  });
+};
+
+const verifyOtp = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token is required'
+      });
+    }
+
+    // Verify Firebase token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    let user = await User.findOne({ firebaseUid: decodedToken.uid });
+
+    if (!user) {
+      // Create new user if they don't exist
+      user = new User({
+        firebaseUid: decodedToken.uid,
+        phoneNumber: decodedToken.phone_number,
+        // You might want to request displayName and email in a subsequent step
+        displayName: decodedToken.phone_number, // Placeholder
+        email: decodedToken.email || `${decodedToken.phone_number}@example.com`, // Placeholder
+      });
+      await user.save();
+    } else {
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Token verified successfully',
+      user: {
+        id: user._id,
+        firebaseUid: user.firebaseUid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        isActive: user.isActive
+      }
+    });
+
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(401).json({
+      success: false,
+      message: 'Invalid token',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   verifyToken,
   getProfile,
   updateProfile,
   deleteAccount,
-  refreshToken
+  refreshToken,
+  sendOtp,
+  verifyOtp
 };

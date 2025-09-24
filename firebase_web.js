@@ -12,8 +12,8 @@ const firebaseConfig = {
   projectId: "encoded-joy-472514-n7",
   storageBucket: "encoded-joy-472514-n7.firebasestorage.app",
   messagingSenderId: "779116345230",
-  appId: "1:779116345230:web:c4acae550d27ef096416df",
-  measurementId: "G-NSVV8DV6HD"
+  appId: "1:779116345230:web:cb4d46f15a91220d6416df",
+  measurementId: "G-SMGRZC5HHC"
 };
 
 // Initialize Firebase

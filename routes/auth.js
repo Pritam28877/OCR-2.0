@@ -5,7 +5,9 @@ const {
   getProfile,
   updateProfile,
   deleteAccount,
-  refreshToken
+  refreshToken,
+  sendOtp,
+  verifyOtp
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -120,5 +122,55 @@ router.delete('/profile', authenticateToken, deleteAccount);
  *         description: Unauthorized
  */
 router.post('/refresh', authenticateToken, refreshToken);
+
+/**
+ * @swagger
+ * /api/auth/send-otp:
+ *   post:
+ *     summary: Initiate OTP sending process (placeholder)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phoneNumber
+ *             properties:
+ *               phoneNumber:
+ *                 type: string
+ *                 description: The user's phone number in E.164 format
+ *     responses:
+ *       200:
+ *         description: OTP sending process should be initiated on the client-side
+ */
+router.post('/send-otp', sendOtp);
+
+/**
+ * @swagger
+ * /api/auth/verify-otp:
+ *   post:
+ *     summary: Verify OTP via Firebase token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Firebase ID token obtained after OTP verification on the client
+ *     responses:
+ *       200:
+ *         description: Token verified successfully
+ *       401:
+ *         description: Invalid token
+ */
+router.post('/verify-otp', verifyOtp);
 
 module.exports = router;
