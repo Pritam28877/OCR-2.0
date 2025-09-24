@@ -1,7 +1,7 @@
 {
-  "name": "ocr-product-quotation-backend",
+  "name": "ocr-backend",
   "version": "1.0.0",
-  "description": "Backend API for OCR-based Product Quotation System",
+  "description": "OCR Backend with Google Firebase Auth and Gemini API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,36 +10,30 @@
   },
   "keywords": [
     "ocr",
-    "quotation",
+    "firebase",
     "mongodb",
-    "google-vision",
-    "express"
+    "express",
+    "gemini"
   ],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@google-cloud/vision": "^5.3.3",
-    "bcryptjs": "^3.0.2",
-    "compression": "^1.8.1",
+    "@google/generative-ai": "^0.21.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "csv-parser": "^3.2.0",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
-    "express-validator": "^7.2.1",
-    "firebase-admin": "^13.5.0",
-    "fuse.js": "^7.1.0",
-    "helmet": "^8.1.0",
+    "csv-parser": "^3.0.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "firebase-admin": "^12.7.0",
+    "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.18.1",
-    "morgan": "^1.10.1",
-    "multer": "^2.0.2",
-    "sharp": "^0.34.4",
+    "mongoose": "^8.0.3",
+    "multer": "^1.4.5-lts.1",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.0.2"
   }
 }

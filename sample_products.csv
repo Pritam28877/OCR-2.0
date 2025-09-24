@@ -1,0 +1,6 @@
+itemNumber,productName,totalQuantity,category,price,description,imageUrl,subQuantities
+1,"Wireless Bluetooth Headphones","100 pieces","Electronics",29.99,"High-quality wireless headphones with noise cancellation","https://example.com/headphones.jpg","[{\"color\":\"Black\",\"quantity\":\"50\"},{\"color\":\"White\",\"quantity\":\"30\"},{\"color\":\"Blue\",\"quantity\":\"20\"}]"
+2,"Cotton T-Shirt","200 units","Clothing",15.99,"Comfortable cotton t-shirt in various sizes","https://example.com/tshirt.jpg","[{\"color\":\"Small\",\"quantity\":\"50\"},{\"color\":\"Medium\",\"quantity\":\"80\"},{\"color\":\"Large\",\"quantity\":\"70\"}]"
+3,"Stainless Steel Water Bottle","150 units","Home & Kitchen",24.99,"Insulated stainless steel water bottle","https://example.com/bottle.jpg","[{\"color\":\"Silver\",\"quantity\":\"75\"},{\"color\":\"Black\",\"quantity\":\"75\"}]"
+4,"LED Desk Lamp","75 units","Electronics",39.99,"Adjustable LED desk lamp with USB charging","https://example.com/lamp.jpg","[{\"color\":\"White\",\"quantity\":\"40\"},{\"color\":\"Black\",\"quantity\":\"35\"}]"
+5,"Yoga Mat","120 units","Sports",19.99,"Non-slip yoga mat perfect for all types of yoga","https://example.com/yogamat.jpg","[{\"color\":\"Purple\",\"quantity\":\"40\"},{\"color\":\"Blue\",\"quantity\":\"40\"},{\"color\":\"Pink\",\"quantity\":\"40\"}]"

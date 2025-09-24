@@ -1,43 +1,42 @@
-# OCR Product Quotation System - Backend API
+# OCR Backend API
 
-A comprehensive Node.js backend API for managing product catalogs and generating quotations from handwritten/image-based product lists using Google Vision OCR technology.
+A comprehensive backend API for OCR (Optical Character Recognition) processing using Google Firebase Authentication and Google Gemini API. Built with Node.js, Express, MongoDB, and includes Swagger documentation.
 
 ## Features
 
-- **Product Management**: CRUD operations, CSV import/export, advanced search with fuzzy matching
-- **OCR Processing**: Google Vision API integration for text extraction from images
-- **Quotation System**: Create, manage, and track quotations with automatic product matching
-- **File Upload**: Support for images (JPEG, PNG, PDF) and CSV files
-- **Statistics & Analytics**: Product and quotation insights
-- **API Documentation**: Complete Swagger/OpenAPI documentation
-- **Rate Limiting**: Built-in protection against API abuse
-- **Error Handling**: Comprehensive error handling and validation
+- 🔐 **Firebase Authentication** - Secure user authentication and authorization
+- 📷 **OCR Processing** - Extract text from images using Google Gemini 2.0 Flash
+- 🏪 **Product Management** - Manage product catalog with categories and pricing
+- 📋 **Quotation System** - Create and manage quotations with automatic calculations
+- 🔄 **Product Matching** - Match OCR extracted data with existing products
+- 📊 **Statistics & Analytics** - Get insights from OCR processing and business data
+- 📚 **Swagger Documentation** - Comprehensive API documentation
+- 🛡️ **Security** - Rate limiting, CORS, helmet security headers
 
 ## Tech Stack
 
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose ODM
-- **OCR**: Google Cloud Vision API
-- **Search**: Fuse.js for fuzzy matching
-- **File Upload**: Multer
-- **Documentation**: Swagger/OpenAPI 3.0
+- **Authentication**: Firebase Admin SDK
+- **OCR**: Google Gemini 2.0 Flash API
+- **Documentation**: Swagger/OpenAPI
 - **Security**: Helmet, CORS, Rate Limiting
-- **Validation**: Express Validator
+- **File Upload**: Multer
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v16 or higher)
 - MongoDB (local or MongoDB Atlas)
-- Google Cloud Platform account with Vision API enabled
-- Google Cloud Service Account credentials
+- Firebase project with Admin SDK configured
+- Google Gemini API key
 
 ## Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd ocr-2-main
+   cd ocr-backend
    ```
 
 2. **Install dependencies**
@@ -45,277 +44,237 @@ A comprehensive Node.js backend API for managing product catalogs and generating
    npm install
    ```
 
-3. **Set up Google Cloud credentials**
-   - Create a service account in Google Cloud Console
-   - Enable the Vision API
-   - Download the service account key JSON file
-   - Rename it to `auth.json` and place it in the project root
-   - Or use the example file: `cp auth.json.example auth.json` and fill in your credentials
+3. **Environment Configuration**
 
-4. **Configure environment variables**
-   - The `.env` file is already configured
-   - Update `MONGODB_URI` if needed
-   - Update `GOOGLE_CLOUD_PROJECT_ID` to match your Google Cloud project
-   - Adjust other settings as needed
+   Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
 
-## Environment Variables
+   Update the `.env` file with your configuration:
 
-```env
-# Server Configuration
-PORT=8080
+   ```env
+   # Server Configuration
+   PORT=3000
+   NODE_ENV=development
 
-# Database - MongoDB
-MONGODB_URI=your_mongodb_connection_string
+   # Database Configuration
+   MONGODB_URI=mongodb://localhost:27017/ocr-backend
 
-# Authentication (currently disabled for development)
-JWT_SECRET=your_jwt_secret
-DISABLE_AUTH=true
+   # Firebase Configuration
+   FIREBASE_PROJECT_ID=your-firebase-project-id
+   FIREBASE_PRIVATE_KEY_ID=your-private-key-id
+   FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----"
+   FIREBASE_CLIENT_EMAIL=your-firebase-client-email
+   FIREBASE_CLIENT_ID=your-client-id
+   FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
+   FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
+   FIREBASE_AUTH_PROVIDER_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
 
-# File Storage
-UPLOAD_DIR=./uploads
+   # Google Gemini API
+   GEMINI_API_KEY=your-gemini-api-key
 
-# OCR Configuration
-OCR_PROVIDER=google_vision
-OCR_LANGS=en
+   # JWT Configuration
+   JWT_SECRET=your-super-secret-jwt-key-here
+   JWT_EXPIRES_IN=24h
+   ```
 
-# Google Cloud Configuration
-GOOGLE_APPLICATION_CREDENTIALS=./auth.json
-GOOGLE_CLOUD_PROJECT_ID=your-google-cloud-project-id
+## Firebase Setup
 
-# CORS
-CORS_ORIGIN=http://localhost:3000
+1. **Create a Firebase Project**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Create a new project or select existing one
 
-# Rate Limiting
-RATE_LIMIT_MAX=100
-RATE_LIMIT_WINDOW_MS=60000
+2. **Enable Authentication**
+   - Go to Authentication > Sign-in method
+   - Enable Email/Password or desired providers
 
-# Logging
-LOG_LEVEL=info
-```
+3. **Generate Service Account Key**
+   - Go to Project Settings > Service Accounts
+   - Generate new private key
+   - Download the JSON file
+   - Copy the values to your `.env` file
 
-## Running the Application
+4. **Get Gemini API Key**
+   - Go to [Google AI Studio](https://aistudio.google.com/)
+   - Create a new API key
+   - Add it to your `.env` file
 
-### Development Mode
-```bash
-npm run dev
-```
+## Database Setup
 
-### Production Mode
-```bash
-npm start
-```
+1. **Local MongoDB**
+   ```bash
+   # Install MongoDB locally or use Docker
+   docker run -d -p 27017:27017 --name mongodb mongo:latest
+   ```
 
-The server will start on `http://localhost:8080`
+2. **MongoDB Atlas (Cloud)**
+   - Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
+   - Create a cluster
+   - Get connection string and update `MONGODB_URI` in `.env`
 
-## API Documentation
+## Usage
 
-Once the server is running, access the interactive API documentation at:
-- **Swagger UI**: http://localhost:8080/api-docs
-- **API Base URL**: http://localhost:8080/api
+1. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+2. **Start production server**
+   ```bash
+   npm start
+   ```
+
+3. **Access the API**
+   - Server: `http://localhost:3000`
+   - API Documentation: `http://localhost:3000/api-docs`
+   - Health Check: `http://localhost:3000/health`
 
 ## API Endpoints
 
+### Authentication
+- `POST /api/auth/verify` - Verify Firebase token
+- `GET /api/auth/profile` - Get user profile
+- `PUT /api/auth/profile` - Update user profile
+- `DELETE /api/auth/profile` - Delete user account
+
+### OCR Processing
+- `POST /api/ocr/process` - Process image with OCR
+- `POST /api/ocr/process-data` - Process OCR data
+- `GET /api/ocr/history` - Get OCR processing history
+- `GET /api/ocr/stats` - Get OCR statistics
+
 ### Products
-- `GET /api/products` - Get all products with pagination
-- `GET /api/products/search` - Search products (with fuzzy matching)
-- `GET /api/products/categories` - Get product categories
+- `GET /api/products` - Get all products
 - `GET /api/products/stats` - Get product statistics
-- `GET /api/products/template` - Download CSV import template
-- `POST /api/products/import` - Import products from CSV
-- `GET /api/products/:id` - Get single product
-- `POST /api/products` - Create new product
-- `PUT /api/products/:id` - Update product
-- `DELETE /api/products/:id` - Delete product (soft delete)
+- `GET /api/products/:id` - Get product by ID
+- `GET /api/products/category/:category` - Get products by category
+- `POST /api/products` - Create new product (Admin only)
+- `PUT /api/products/:id` - Update product (Admin only)
+- `DELETE /api/products/:id` - Delete product (Admin only)
 
 ### Quotations
-- `GET /api/quotations` - Get all quotations with pagination
+- `GET /api/quotations` - Get all quotations
 - `GET /api/quotations/stats` - Get quotation statistics
-- `POST /api/quotations/upload` - Upload image for OCR processing
-- `POST /api/quotations/from-ocr` - Create quotation from OCR results
-- `GET /api/quotations/:id` - Get single quotation
+- `GET /api/quotations/:id` - Get quotation by ID
 - `POST /api/quotations` - Create new quotation
 - `PUT /api/quotations/:id` - Update quotation
+- `PATCH /api/quotations/:id/status` - Update quotation status
 - `DELETE /api/quotations/:id` - Delete quotation
-- `POST /api/quotations/:id/duplicate` - Duplicate quotation
-- `POST /api/quotations/:id/items` - Add item to quotation
-- `PUT /api/quotations/:id/items/:itemId` - Update quotation item
-- `DELETE /api/quotations/:id/items/:itemId` - Remove quotation item
 
-### System
-- `GET /api/health` - Health check
-- `GET /api` - API information
+## Authentication
 
-## Usage Examples
-
-### 1. Import Products from CSV
+The API uses Firebase Authentication. Include the Firebase ID token in the Authorization header:
 
 ```bash
-curl -X POST http://localhost:8080/api/products/import \
-  -F "csvFile=@products.csv"
+Authorization: Bearer <firebase-id-token>
 ```
 
-### 2. Upload Image for OCR Processing
+## OCR Processing
+
+### Image Upload
+Send a POST request to `/api/ocr/process` with a multipart/form-data containing an image file:
 
 ```bash
-curl -X POST http://localhost:8080/api/quotations/upload \
-  -F "image=@handwritten-list.jpg"
+curl -X POST http://localhost:3000/api/ocr/process \\
+  -H "Authorization: Bearer <firebase-token>" \\
+  -F "image=@/path/to/image.jpg"
 ```
 
-### 3. Create Product
+### Response Format
+The OCR service returns structured data in this format:
 
-```bash
-curl -X POST http://localhost:8080/api/products \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Wireless Headphones",
-    "sku": "WH-001",
-    "price": 199.99,
-    "description": "High-quality wireless headphones",
-    "categories": ["Electronics", "Audio"]
-  }'
+```json
+{
+  "products": [
+    {
+      "item_number": 1,
+      "product_name": "Product name here",
+      "total_quantity": "Quantity here",
+      "sub_quantities": [
+        { "color": "Color here", "quantity": "Quantity here" }
+      ]
+    }
+  ]
+}
 ```
 
-### 4. Search Products
+## Product Matching
 
-```bash
-# Exact search
-curl "http://localhost:8080/api/products/search?query=headphones"
-
-# Fuzzy search
-curl "http://localhost:8080/api/products/search?query=headfones&fuzzy=true"
-```
-
-## File Upload Specifications
-
-### Images (OCR Processing)
-- **Supported formats**: JPEG, JPG, PNG, PDF
-- **Maximum size**: 10MB per file
-- **Maximum files**: 5 files per request
-
-### CSV Import
-- **Supported format**: CSV only
-- **Maximum size**: 5MB
-- **Required columns**: name, sku, price
-- **Optional columns**: description, categories
-
-## CSV Import Format
-
-Download the template from `/api/products/template` or use this format:
-
-```csv
-name,sku,price,description,categories
-"Wireless Headphones","WH-001",199.99,"High-quality wireless headphones","Electronics,Audio"
-"Bluetooth Speaker","BS-002",89.99,"Portable bluetooth speaker","Electronics,Audio"
-```
-
-## OCR Processing Workflow
-
-1. **Upload Image**: Send image file to `/api/quotations/upload`
-2. **Text Extraction**: Google Vision API extracts text from image
-3. **Data Parsing**: System parses product names, quantities, and prices
-4. **Product Matching**: Fuzzy matching against product database
-5. **Review Results**: Manual verification of matched products
-6. **Create Quotation**: Generate quotation from verified data
+The system automatically matches OCR extracted products with existing database products and provides suggestions for unmatched items.
 
 ## Error Handling
 
-The API returns consistent error responses:
+The API uses consistent error response format:
 
 ```json
 {
   "success": false,
-  "error": "Error message",
-  "details": ["Additional error details"]
+  "message": "Error description",
+  "error": "Detailed error message"
 }
 ```
 
-Common HTTP status codes:
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request (validation errors)
-- `404` - Not Found
-- `500` - Internal Server Error
-
-## Rate Limiting
-
-- **Default**: 100 requests per minute per IP
-- **Configurable**: Set `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW_MS`
-- **Headers**: Rate limit info included in response headers
-
 ## Security Features
 
+- **Rate Limiting**: 100 requests per 15 minutes per IP
+- **CORS**: Configured for cross-origin requests
 - **Helmet**: Security headers
-- **CORS**: Cross-origin resource sharing
-- **Rate Limiting**: Request throttling
-- **Input Validation**: Comprehensive validation
-- **File Upload Security**: Type and size restrictions
+- **Input Validation**: Request validation and sanitization
+- **Authentication**: Firebase-based secure authentication
 
 ## Development
 
+### Scripts
+- `npm start` - Start production server
+- `npm run dev` - Start development server with nodemon
+- `npm test` - Run tests (not implemented yet)
+
 ### Project Structure
 ```
-src/
-├── config/          # Configuration files
-├── controllers/     # Route controllers
-├── middleware/      # Custom middleware
-├── models/          # Database models
-├── routes/          # API routes
-└── utils/           # Utility functions
-uploads/             # File upload directory
-server.js           # Main server file
+├── config/
+│   ├── database.js     # MongoDB connection
+│   └── firebase.js     # Firebase Admin SDK initialization
+├── controllers/
+│   ├── authController.js
+│   ├── ocrController.js
+│   ├── productController.js
+│   └── quotationController.js
+├── models/
+│   ├── Product.js
+│   ├── Quotation.js
+│   └── User.js
+├── routes/
+│   ├── auth.js
+│   ├── ocr.js
+│   ├── products.js
+│   └── quotations.js
+├── services/
+│   ├── ocrService.js
+│   └── matchingService.js
+├── middleware/
+│   └── auth.js
+├── .env
+├── server.js
+└── package.json
 ```
-
-### Adding New Features
-
-1. **Models**: Add to `src/models/`
-2. **Controllers**: Add to `src/controllers/`
-3. **Routes**: Add to `src/routes/`
-4. **Middleware**: Add to `src/middleware/`
-5. **Documentation**: Update Swagger comments
-
-## Deployment
-
-### Environment Setup
-1. Set `NODE_ENV=production`
-2. Configure production MongoDB URI
-3. Set up proper Google Cloud credentials
-4. Configure CORS for production domain
-5. Set secure JWT secret
-
-### Docker (Optional)
-```dockerfile
-FROM node:16-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 8080
-CMD ["npm", "start"]
-```
-
-## Monitoring
-
-- **Health Check**: `/api/health`
-- **Logs**: Morgan logging middleware
-- **Error Tracking**: Comprehensive error handling
-- **Performance**: Request timing in logs
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make changes with tests
-4. Update documentation
+3. Make your changes
+4. Add tests if applicable
 5. Submit a pull request
 
 ## License
 
-MIT License - see LICENSE file for details
+This project is licensed under the ISC License.
 
 ## Support
 
-For support and questions:
-- Check the API documentation at `/api-docs`
-- Review error messages and logs
-- Check environment configuration
-- Verify Google Cloud credentials and permissions
+For support, please contact the development team or create an issue in the repository.
+
+---
+
+**Note**: Make sure to keep your API keys and sensitive configuration secure and never commit them to version control.
