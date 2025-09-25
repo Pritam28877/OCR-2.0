@@ -31,11 +31,7 @@ app.use(
 
 
 // CORS configuration
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
+app.use(cors());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -71,8 +67,8 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT || 3000}`,
-        description: 'Development server'
+        url: '/',
+        description: 'API Server'
       }
     ],
     components: {
@@ -105,6 +101,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 // Health check endpoint
 app.get('/health', (req, res) => {
   const mongoose = require('mongoose');
+  const PORT = process.env.PORT || 8080;
 
   const healthStatus = {
     success: true,
