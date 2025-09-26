@@ -25,13 +25,18 @@ const verifyToken = async (req, res) => {
 
     if (!user) {
       // Create new user
-      user = new User({
+      const userData = {
         firebaseUid: decodedToken.uid,
-        email: decodedToken.email,
         displayName: decodedToken.name,
         photoURL: decodedToken.picture,
-        phoneNumber: decodedToken.phone_number
-      });
+        phoneNumber: decodedToken.phone_number,
+      };
+
+      if (decodedToken.email) {
+        userData.email = decodedToken.email;
+      }
+
+      user = new User(userData);
       await user.save();
     } else {
       // Update last login
@@ -229,13 +234,18 @@ const verifyOtp = async (req, res) => {
 
     if (!user) {
       // Create new user if they don't exist
-      user = new User({
+      const userData = {
         firebaseUid: decodedToken.uid,
         phoneNumber: decodedToken.phone_number,
         // You might want to request displayName and email in a subsequent step
         displayName: decodedToken.phone_number, // Placeholder
-        email: decodedToken.email || `${decodedToken.phone_number}@example.com`, // Placeholder
-      });
+      };
+      if (decodedToken.email) {
+        userData.email = decodedToken.email;
+      } else if (decodedToken.phone_number) {
+        userData.email = `${decodedToken.phone_number}@example.com`; // Placeholder
+      }
+      user = new User(userData);
       await user.save();
     } else {
       // Update last login

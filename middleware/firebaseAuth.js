@@ -40,7 +40,7 @@ const firebaseAuth = async (req, res, next) => {
     console.error('Firebase authentication error:', error);
     return res.status(401).json({
       success: false,
-      message: 'Unauthorized: Invalid token',
+      message: 'Invalid token.',
       error: error.message
     });
   }
