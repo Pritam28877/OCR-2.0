@@ -34,6 +34,8 @@ const verifyToken = async (req, res) => {
 
       if (decodedToken.email) {
         userData.email = decodedToken.email;
+      } else {
+        userData.email = `${decodedToken.phone_number || decodedToken.uid}@example.com`;
       }
 
       user = new User(userData);
@@ -244,6 +246,8 @@ const verifyOtp = async (req, res) => {
         userData.email = decodedToken.email;
       } else if (decodedToken.phone_number) {
         userData.email = `${decodedToken.phone_number}@example.com`; // Placeholder
+      } else {
+        userData.email = `${decodedToken.uid}@example.com`; // Fallback placeholder
       }
       user = new User(userData);
       await user.save();

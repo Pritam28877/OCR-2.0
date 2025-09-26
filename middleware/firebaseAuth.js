@@ -21,11 +21,12 @@ const firebaseAuth = async (req, res, next) => {
     let user = await User.findOne({ firebaseUid: uid });
 
     if (!user) {
+      const email = decodedToken.email || `${decodedToken.phone_number || decodedToken.uid}@example.com`;
       user = new User({
         firebaseUid: uid,
         email: email,
         displayName: name || email.split('@')[0], // Fallback for display name
-        username: email,
+        phoneNumber: decodedToken.phone_number,
         password: 'managed_by_firebase', // Placeholder
         roles: ['user'] // Default role
       });
