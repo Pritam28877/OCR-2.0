@@ -12,58 +12,62 @@ const subQuantitySchema = new mongoose.Schema({
 });
 
 const productSchema = new mongoose.Schema({
-  itemNumber: {
+  catalogueId: {
+    type: String,
+    required: false,
+    unique: true,
+    sparse: true,
+  },
+  name: {
     type: String,
     required: true,
-    unique: true
-  },
-  productNumber: {
-    type: String
-  },
-  productName: {
-    type: String,
-    required: true
-  },
-  totalQuantity: {
-    type: String,
-    required: true
-  },
-  subQuantities: [subQuantitySchema],
-  category: {
-    type: String,
-    required: false
-  },
-  catalogNo: {
-    type: String
-  },
-  price: {
-    type: Number,
-    required: false
-  },
-  sku: {
-    type: String
   },
   description: {
     type: String,
-    required: false
+    required: false,
   },
-  imageUrl: {
+  brand: {
     type: String,
-    required: false
+    required: false,
   },
+  classification: {
+    type: [String],
+    required: false,
+  },
+  units: {
+    type: String,
+    required: false,
+  },
+  price: {
+    type: Number,
+    required: false,
+  },
+  defaultDiscount: {
+    type: Number,
+    default: 0,
+  },
+  hsnCode: {
+    type: String,
+    required: false,
+  },
+  gstPercentage: {
+    type: Number,
+    required: false,
+  },
+  subQuantities: [subQuantitySchema],
   isActive: {
     type: Boolean,
-    default: true
+    default: true,
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false,
   },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }
+    ref: 'User',
+  },
 }, { timestamps: true });
 
 // Update the updatedAt field before saving
@@ -73,7 +77,7 @@ productSchema.pre('save', function(next) {
 });
 
 // Index for faster searches
-productSchema.index({ productName: 1 });
-productSchema.index({ category: 1 });
+productSchema.index({ name: 1 });
+productSchema.index({ classification: 1 });
 
 module.exports = mongoose.model('Product', productSchema);

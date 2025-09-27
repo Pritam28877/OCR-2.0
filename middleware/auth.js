@@ -1,7 +1,24 @@
+require('dotenv').config();
 const admin = require('../config/firebase');
 const User = require('../models/User');
 
 const authenticateToken = async (req, res, next) => {
+  if (process.env.LOCAL_DEV_MODE === 'true') {
+    console.log('--- LOCAL DEV MODE: Bypassing Token Auth ---');
+    let mockUser = await User.findOne({ email: 'dev@local.com' });
+    if (!mockUser) {
+        mockUser = new User({
+            displayName: 'Local Developer',
+            email: 'dev@local.com',
+            role: 'admin',
+            firebaseUid: 'local_dev_uid',
+        });
+        await mockUser.save();
+    }
+    req.user = mockUser;
+    return next();
+  }
+
   try {
     const authHeader = req.headers.authorization;
 
@@ -35,7 +52,8 @@ const authenticateToken = async (req, res, next) => {
         firebaseUid: decodedToken.uid,
         email: decodedToken.email,
         displayName: decodedToken.name,
-        photoURL: decodedToken.picture
+        photoURL: decodedToken.picture,
+        role: 'user' // Assign default role
       });
       await user.save();
     } else {
@@ -58,6 +76,11 @@ const authenticateToken = async (req, res, next) => {
 
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
+    if (process.env.LOCAL_DEV_MODE === 'true') {
+      // In local dev mode, grant all role access
+      return next();
+    }
+
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -68,7 +91,7 @@ const authorizeRoles = (...roles) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied. Insufficient permissions.'
+        message: `Access denied. User role '${req.user.role}' is not authorized.`
       });
     }
 

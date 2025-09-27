@@ -1,5 +1,5 @@
 const { extractTextFromImage, parseOCRResponse, calculateCostEstimate } = require('../services/ocrService');
-const { matchProducts, createNewProducts } = require('../services/matchingService');
+const { matchProducts } = require('../services/matchingService');
 
 /**
  * Process image and extract text using OCR
@@ -32,25 +32,10 @@ const processImageOCR = async (req, res) => {
     // Parse OCR response
     const parsedResult = parseOCRResponse(ocrResult.text);
 
-    // Calculate cost estimate
-    const costEstimate = calculateCostEstimate(ocrResult.usageMetadata);
-
-    // Try to match products if parsing was successful
-    let matchingResult = null;
-    if (parsedResult.success && parsedResult.data.products) {
-      matchingResult = await matchProducts(parsedResult.data.products);
-    }
-
     res.status(200).json({
       success: true,
       message: 'OCR processing completed successfully',
-      data: {
-        rawText: ocrResult.text,
-        parsedData: parsedResult.success ? parsedResult.data : null,
-        matchingResult: matchingResult,
-        costAnalysis: costEstimate,
-        usageMetadata: ocrResult.usageMetadata
-      }
+      data: parsedResult.success ? parsedResult.data : { products: [] }
     });
 
   } catch (error) {
@@ -70,41 +55,50 @@ const processImageOCR = async (req, res) => {
  */
 const processOCRData = async (req, res) => {
   try {
-    const { ocrData, createProducts, createQuotation } = req.body;
-    const userId = req.user._id;
+    const { data } = req.body;
 
-    if (!ocrData || !ocrData.products) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Valid OCR data is required'
+        message: 'A valid array of products under the "data" key is required'
       });
     }
 
-    let result = {
+    // Match products with the database
+    const matchingResult = await matchProducts(data);
+
+    // Create a map for easy lookup of matched products
+    const matchedProductsMap = new Map();
+    matchingResult.matchedProducts.forEach(match => {
+      matchedProductsMap.set(match.extracted.item_number, match.matched);
+    });
+
+    // Build the response by augmenting the original data with price and discount
+    const responseData = data.map(inputProduct => {
+      const matchedProduct = matchedProductsMap.get(inputProduct.item_number);
+
+      if (matchedProduct) {
+        // If a match was found, add price and discount
+        return {
+          ...inputProduct,
+          price: matchedProduct.price,
+          defaultDiscount: matchedProduct.defaultDiscount,
+        };
+      } else {
+        // If no match was found, return the original product with null values
+        return {
+          ...inputProduct,
+          price: null,
+          defaultDiscount: null,
+        };
+      }
+    });
+
+    res.status(200).json({
       success: true,
-      message: 'OCR data processed successfully'
-    };
-
-    // Match products
-    const matchingResult = await matchProducts(ocrData.products);
-
-    if (createProducts && matchingResult.unmatchedProducts.length > 0) {
-      // Create new products for unmatched items
-      const createResult = await createNewProducts(matchingResult.unmatchedProducts, userId);
-      result.productsCreated = createResult;
-    }
-
-    // TODO: Implement quotation creation logic
-    if (createQuotation) {
-      result.quotation = {
-        message: 'Quotation creation not yet implemented',
-        data: null
-      };
-    }
-
-    result.matchingResult = matchingResult;
-
-    res.status(200).json(result);
+      message: 'Product matching completed successfully.',
+      data: responseData,
+    });
 
   } catch (error) {
     console.error('OCR data processing error:', error);

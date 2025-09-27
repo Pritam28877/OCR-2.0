@@ -1,3 +1,4 @@
+const Fuse = require('fuse.js');
 const Product = require('../models/Product');
 
 /**
@@ -7,54 +8,54 @@ const Product = require('../models/Product');
  */
 const matchProducts = async (extractedProducts) => {
   try {
+    const allProducts = await Product.find({ isActive: true });
+
+    const fuse = new Fuse(allProducts, {
+      keys: ['name', 'description', 'catalogueId'],
+      includeScore: true,
+      threshold: 0.4, 
+    });
+
     const matchedProducts = [];
     const unmatchedProducts = [];
     const suggestions = [];
 
     for (const extractedProduct of extractedProducts) {
-      // Try to find exact match by product name
-      let product = await Product.findOne({
-        productName: { $regex: new RegExp(extractedProduct.product_name, 'i') },
-        isActive: true
-      });
+      const results = fuse.search(extractedProduct.product_name);
 
-      if (product) {
-        matchedProducts.push({
-          extracted: extractedProduct,
-          matched: product,
-          matchType: 'exact_name'
-        });
-      } else {
-        // Try to find partial match
-        const partialMatches = await Product.find({
-          productName: { $regex: new RegExp(extractedProduct.product_name.split(' ')[0], 'i') },
-          isActive: true
-        }).limit(5);
-
-        if (partialMatches.length > 0) {
-          suggestions.push({
+      if (results.length > 0) {
+        const bestMatch = results[0];
+        // You can adjust the score threshold to fine-tune matching accuracy
+        if (bestMatch.score < 0.3) { 
+          matchedProducts.push({
             extracted: extractedProduct,
-            suggestions: partialMatches
+            matched: bestMatch.item,
+            matchType: 'fuzzy_name',
+            score: bestMatch.score,
           });
         } else {
-          unmatchedProducts.push(extractedProduct);
+          suggestions.push({
+            extracted: extractedProduct,
+            suggestions: results.slice(0, 5).map(res => res.item), 
+          });
         }
+      } else {
+        unmatchedProducts.push(extractedProduct);
       }
     }
 
     return {
       success: true,
-      matchedProducts: matchedProducts,
-      unmatchedProducts: unmatchedProducts,
-      suggestions: suggestions,
+      matchedProducts,
+      unmatchedProducts,
+      suggestions,
       summary: {
         totalExtracted: extractedProducts.length,
         totalMatched: matchedProducts.length,
         totalUnmatched: unmatchedProducts.length,
-        totalSuggestions: suggestions.length
-      }
+        totalSuggestions: suggestions.length,
+      },
     };
-
   } catch (error) {
     console.error('Error in matching service:', error);
     return {
@@ -62,7 +63,7 @@ const matchProducts = async (extractedProducts) => {
       error: error.message,
       matchedProducts: [],
       unmatchedProducts: [],
-      suggestions: []
+      suggestions: [],
     };
   }
 };

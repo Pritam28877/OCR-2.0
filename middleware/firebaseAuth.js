@@ -1,7 +1,28 @@
+require('dotenv').config();
 const admin = require('../config/firebase');
 const User = require('../models/User');
 
 const firebaseAuth = async (req, res, next) => {
+  // --- Enhanced Debugging for Local Dev Mode ---
+  console.log(`[Auth Middleware] Checking LOCAL_DEV_MODE. Value: '${process.env.LOCAL_DEV_MODE}' (Type: ${typeof process.env.LOCAL_DEV_MODE})`);
+
+  if (process.env.LOCAL_DEV_MODE === 'true') {
+    console.log('--- LOCAL DEV MODE: Bypassing Firebase Auth ---');
+    // In local dev mode, bypass Firebase and attach a mock user
+    let mockUser = await User.findOne({ email: 'dev@local.com' });
+    if (!mockUser) {
+        mockUser = new User({
+            displayName: 'Local Developer',
+            email: 'dev@local.com',
+            roles: ['admin', 'user'],
+            firebaseUid: 'local_dev_uid',
+        });
+        await mockUser.save();
+    }
+    req.user = mockUser;
+    return next();
+  }
+
   const authorizationHeader = req.headers.authorization;
 
   if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -28,7 +49,7 @@ const firebaseAuth = async (req, res, next) => {
         displayName: name || email.split('@')[0], // Fallback for display name
         phoneNumber: decodedToken.phone_number,
         password: 'managed_by_firebase', // Placeholder
-        roles: ['user'] // Default role
+        role: 'user' // Default role
       });
       await user.save();
     }

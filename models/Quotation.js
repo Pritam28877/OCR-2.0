@@ -6,63 +6,34 @@ const quotationItemSchema = new mongoose.Schema({
     ref: 'Product',
     required: true
   },
-  quantity: {
-    type: String,
-    required: true
-  },
-  unitPrice: {
-    type: Number,
-    required: true
-  },
-  totalPrice: {
-    type: Number,
-    required: true
-  },
-  notes: {
-    type: String,
-    required: false
-  }
+  productName: { type: String, required: true },
+  quantity: { type: Number, required: true },
+  units: { type: String, required: false },
+  price: { type: Number, required: true },
+  discountPercentage: { type: Number, default: 0 },
+  gstPercentage: { type: Number, default: 0 },
+  netPrice: { type: Number, required: true },
+  taxAmount: { type: Number, required: true },
+  itemTotal: { type: Number, required: true },
 });
 
 const quotationSchema = new mongoose.Schema({
   quotationNumber: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
-  customerName: {
-    type: String,
-    required: true
-  },
-  customerEmail: {
-    type: String,
-    required: true
-  },
-  customerPhone: {
-    type: String,
-    required: false
-  },
-  customerAddress: {
-    type: String,
-    required: false
+  customer: {
+    name: { type: String, required: true },
+    email: { type: String, required: false },
+    phone: { type: String, required: false },
+    address: { type: String, required: false },
   },
   items: [quotationItemSchema],
-  subtotal: {
-    type: Number,
-    required: true
-  },
-  taxAmount: {
-    type: Number,
-    default: 0
-  },
-  discountAmount: {
-    type: Number,
-    default: 0
-  },
-  totalAmount: {
-    type: Number,
-    required: true
-  },
+  subtotal: { type: Number, required: true, default: 0 },
+  totalDiscountAmount: { type: Number, required: true, default: 0 },
+  totalGstAmount: { type: Number, required: true, default: 0 },
+  grandTotal: { type: Number, required: true, default: 0 },
   status: {
     type: String,
     enum: ['draft', 'sent', 'approved', 'rejected', 'completed'],
@@ -74,22 +45,14 @@ const quotationSchema = new mongoose.Schema({
   },
   validUntil: {
     type: Date,
-    required: true
+    required: false
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+}, { timestamps: true });
 
 // Update the updatedAt field before saving
 quotationSchema.pre('save', function(next) {
@@ -97,17 +60,8 @@ quotationSchema.pre('save', function(next) {
   next();
 });
 
-// Calculate totals before saving
-quotationSchema.pre('save', function(next) {
-  if (this.items && this.items.length > 0) {
-    this.subtotal = this.items.reduce((sum, item) => sum + item.totalPrice, 0);
-    this.totalAmount = this.subtotal + this.taxAmount - this.discountAmount;
-  }
-  next();
-});
-
 // Index for faster searches
-quotationSchema.index({ customerEmail: 1 });
+quotationSchema.index({ 'customer.email': 1 });
 quotationSchema.index({ status: 1 });
 quotationSchema.index({ createdAt: -1 });
 

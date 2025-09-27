@@ -1,6 +1,6 @@
 const Quotation = require('../models/Quotation');
 const Product = require('../models/Product');
-const { generateQuotationNumber, calculateQuotationTotals } = require('../services/matchingService');
+const { generateQuotationNumber, calculateTotals } = require('../services/quotationService');
 
 /**
  * Get all quotations with pagination and filtering
@@ -28,8 +28,8 @@ const getAllQuotations = async (req, res) => {
     if (search) {
       filter.$or = [
         { quotationNumber: { $regex: search, $options: 'i' } },
-        { customerName: { $regex: search, $options: 'i' } },
-        { customerEmail: { $regex: search, $options: 'i' } }
+        { 'customer.name': { $regex: search, $options: 'i' } },
+        { 'customer.email': { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -40,7 +40,6 @@ const getAllQuotations = async (req, res) => {
     // Get quotations with pagination
     const quotations = await Quotation.find(filter)
       .populate('createdBy', 'displayName email')
-      .populate('items.product', 'productName itemNumber')
       .sort(sort)
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -86,7 +85,7 @@ const getQuotationById = async (req, res) => {
 
     const quotation = await Quotation.findById(id)
       .populate('createdBy', 'displayName email')
-      .populate('items.product', 'productName itemNumber category price');
+      .populate('items.product');
 
     if (!quotation) {
       return res.status(404).json({
@@ -118,66 +117,57 @@ const getQuotationById = async (req, res) => {
  */
 const createQuotation = async (req, res) => {
   try {
-    const {
-      customerName,
-      customerEmail,
-      customerPhone,
-      customerAddress,
-      items,
-      taxRate = 0,
-      discountAmount = 0,
-      notes,
-      validUntil
-    } = req.body;
+    const { customer, items, notes, validUntil } = req.body;
 
     // Validate required fields
-    if (!customerName || !customerEmail || !items || items.length === 0) {
+    if (!customer || !customer.name || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Customer name, email, and items are required'
+        message: 'Customer details and a valid list of items are required'
       });
     }
 
-    // Validate products exist and get their details
+    // Fetch product details for all items in parallel
     const productIds = items.map(item => item.product);
-    const products = await Product.find({
-      _id: { $in: productIds },
-      isActive: true
-    });
+    const products = await Product.find({ '_id': { $in: productIds } });
 
     if (products.length !== productIds.length) {
-      return res.status(400).json({
-        success: false,
-        message: 'One or more products not found'
-      });
+        return res.status(400).json({ success: false, message: 'One or more products are invalid.' });
     }
+    
+    const productMap = new Map(products.map(p => [p._id.toString(), p]));
 
-    // Calculate totals
-    const totals = calculateQuotationTotals(items, taxRate, discountAmount);
+    const itemsWithDetails = items.map(item => {
+        const product = productMap.get(item.product);
+        return {
+            ...item,
+            product: product._id,
+            productName: product.name,
+            price: product.price,
+            units: product.units,
+            discountPercentage: item.discountPercentage || product.defaultDiscount,
+            gstPercentage: product.gstPercentage,
+        };
+    });
 
-    // Generate quotation number
-    const quotationNumber = generateQuotationNumber();
+    const { processedItems, subtotal, totalDiscountAmount, totalGstAmount, grandTotal } = calculateTotals(itemsWithDetails);
+
+    const quotationNumber = await generateQuotationNumber();
 
     const newQuotation = new Quotation({
       quotationNumber,
-      customerName,
-      customerEmail,
-      customerPhone,
-      customerAddress,
-      items,
-      subtotal: totals.subtotal,
-      taxAmount: totals.taxAmount,
-      discountAmount,
-      totalAmount: totals.totalAmount,
+      customer,
+      items: processedItems,
+      subtotal,
+      totalDiscountAmount,
+      totalGstAmount,
+      grandTotal,
       notes,
       validUntil,
       createdBy: req.user._id
     });
 
     const savedQuotation = await newQuotation.save();
-
-    await savedQuotation.populate('createdBy', 'displayName email');
-    await savedQuotation.populate('items.product', 'productName itemNumber category price');
 
     res.status(201).json({
       success: true,
@@ -203,37 +193,48 @@ const createQuotation = async (req, res) => {
 const updateQuotation = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const { customer, items, notes, validUntil, status } = req.body;
 
-    // Remove fields that shouldn't be updated directly
-    delete updateData.quotationNumber;
-    delete updateData.createdBy;
-    delete updateData.createdAt;
+    const quotation = await Quotation.findById(id);
 
-    // Recalculate totals if items are being updated
-    if (updateData.items) {
-      const totals = calculateQuotationTotals(
-        updateData.items,
-        updateData.taxRate || 0,
-        updateData.discountAmount || 0
-      );
-      updateData.subtotal = totals.subtotal;
-      updateData.totalAmount = totals.totalAmount;
+    if (!quotation) {
+        return res.status(404).json({ success: false, message: 'Quotation not found' });
     }
 
-    const updatedQuotation = await Quotation.findByIdAndUpdate(
-      id,
-      { ...updateData, updatedAt: new Date() },
-      { new: true, runValidators: true }
-    ).populate('createdBy', 'displayName email')
-      .populate('items.product', 'productName itemNumber category price');
+    // Update fields
+    if (customer) quotation.customer = { ...quotation.customer, ...customer };
+    if (notes) quotation.notes = notes;
+    if (validUntil) quotation.validUntil = validUntil;
+    if (status) quotation.status = status;
 
-    if (!updatedQuotation) {
-      return res.status(404).json({
-        success: false,
-        message: 'Quotation not found'
+    // Recalculate totals if items are updated
+    if (items && Array.isArray(items)) {
+      const productIds = items.map(item => item.product);
+      const products = await Product.find({ '_id': { $in: productIds } });
+      const productMap = new Map(products.map(p => [p._id.toString(), p]));
+
+      const itemsWithDetails = items.map(item => {
+          const product = productMap.get(item.product.toString());
+          return {
+              ...item,
+              product: product._id,
+              productName: product.name,
+              price: product.price,
+              units: product.units,
+              discountPercentage: item.discountPercentage || product.defaultDiscount,
+              gstPercentage: product.gstPercentage,
+          };
       });
+
+      const { processedItems, subtotal, totalDiscountAmount, totalGstAmount, grandTotal } = calculateTotals(itemsWithDetails);
+      quotation.items = processedItems;
+      quotation.subtotal = subtotal;
+      quotation.totalDiscountAmount = totalDiscountAmount;
+      quotation.totalGstAmount = totalGstAmount;
+      quotation.grandTotal = grandTotal;
     }
+
+    const updatedQuotation = await quotation.save();
 
     res.status(200).json({
       success: true,
